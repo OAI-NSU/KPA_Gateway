@@ -38,7 +38,6 @@ class SocketClient:
         self._socket.send(data.encode('utf-8'))
 
 
-
 if __name__ == "__main__":
     # server = SocketServer('localhost', 8083)
     # server.start_server()
