@@ -11,7 +11,7 @@ def pos_tel_handler(data):
 @app.control_command(2, 3)
 def cmd_handler(*args):
     print('cmd: ', args)
-    app.send_ack(2)
+    return True
 
 
 if __name__ == "__main__":

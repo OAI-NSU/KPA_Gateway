@@ -24,13 +24,13 @@ class API_Gateway:
                 func: Callable | None = cmd_frame.route(cmd_frame.cmd_type, cmd_frame.cmd_code)
                 if func:
                     result: bool = func(*cmd_frame.args)
-                    response = Frame(FrameReceipt(1, not result))
+                    response = Frame(FrameReceipt(FrameCMD.frame_id.value, not result))
                     self.server.send(response.to_bytes())
             elif transport_frame.frame.frame_id == FrameID.POSITION_TELEMETRY:
                 pos_tel_frame: FramePosTel = transport_frame.frame  # type: ignore
                 func: Callable | None = pos_tel_frame.route(pos_tel_frame.telemetry_type)
                 if func:
-                    result: bool = func(pos_tel_frame.tmi_data)
+                    func(pos_tel_frame.tmi_data)
 
         except ValueError as err:
             logger.error(err)
