@@ -6,7 +6,7 @@ from typing import Any, Callable, Generator
 from kpa_gateway.frame_types.base_types import ARG_SIZES, AbstractFrame, FrameCMDArgType, FrameID
 
 
-class FrameCMD(AbstractFrame):
+class GatewayCMD(AbstractFrame):
     frame_id: FrameID = FrameID.CMD
     _registered: dict[int, dict[int, Callable]] = {}
     def __init__(self, cmd_type: int, cmd_code: int, *args: tuple[FrameCMDArgType, Any]) -> None:
@@ -17,22 +17,22 @@ class FrameCMD(AbstractFrame):
 
     @staticmethod
     def listen(cmd_type: int, cmd_code: int, callback: Callable) -> None:
-        FrameCMD._registered.update({cmd_type: {cmd_code: callback}})
+        GatewayCMD._registered.update({cmd_type: {cmd_code: callback}})
 
     @staticmethod
     def route(cmd_type: int, cmd_code: int) -> Callable | None:
-        return FrameCMD._registered.get(cmd_type, {}).get(cmd_code, None)
+        return GatewayCMD._registered.get(cmd_type, {}).get(cmd_code, None)
 
     @staticmethod
-    def parse(data: bytes) -> 'FrameCMD':
+    def parse(data: bytes) -> 'GatewayCMD':
         fields = struct.unpack('<HIH', data[:8])
         cmd_type: int = fields[0]
         cmd_code: int = fields[1]
         arg_amount: int = fields[2]
-        args: list[tuple[FrameCMDArgType, Any]] = [arg for arg in FrameCMD._parse_args(data[8:])]
+        args: list[tuple[FrameCMDArgType, Any]] = [arg for arg in GatewayCMD._parse_args(data[8:])]
         if arg_amount != len(args):
             raise ValueError(f'Incorrect FrameCMD arguments amount. Got {len(args)} but should be {arg_amount}')
-        return FrameCMD(cmd_type, cmd_code, *args)
+        return GatewayCMD(cmd_type, cmd_code, *args)
 
     def to_bytes(self) -> bytes:
         data: bytes = struct.pack('<HHIH', self.frame_id.value, self.cmd_type, self.cmd_code, self.arg_amount)

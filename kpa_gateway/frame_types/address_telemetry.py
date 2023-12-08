@@ -29,7 +29,7 @@ class AddrTelParameter:
                f'Value: {self.value.hex(" ").upper()}'
 
 
-class FrameAddrTel(AbstractFrame):
+class GatewayAddrTel(AbstractFrame):
     frame_id: FrameID = FrameID.ADDRESS_TELEMETRY
 
     def __init__(self, *args: AddrTelParameter):
@@ -41,12 +41,12 @@ class FrameAddrTel(AbstractFrame):
                                                                                     for arg in self.args])
 
     @staticmethod
-    def parse(data: bytes) -> 'FrameAddrTel':
+    def parse(data: bytes) -> 'GatewayAddrTel':
         arg_amount: int = struct.unpack('<H', data[:2])[0]
-        args: list[AddrTelParameter] = [arg for arg in FrameAddrTel._parse_args(data[2:])]
+        args: list[AddrTelParameter] = [arg for arg in GatewayAddrTel._parse_args(data[2:])]
         if arg_amount != len(args):
             raise ValueError(f'Incorrect FrameAddrTel arguments amount. Got {len(args)} but should be {arg_amount}')
-        return FrameAddrTel(*args)
+        return GatewayAddrTel(*args)
 
     @staticmethod
     def _parse_args(data: bytes):
