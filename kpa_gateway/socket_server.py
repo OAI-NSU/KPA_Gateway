@@ -9,6 +9,7 @@ from kpa_gateway.utils import Signal
 
 class SocketServer:
     received: Signal = Signal(bytes)
+    transmited: Signal = Signal(bytes)
     def __init__(self, host, port) -> None:
         """Initialise the server attributes."""
         self._host = host
@@ -46,6 +47,7 @@ class SocketServer:
                 send_data: bytes = self._tx_queue.get(timeout=0.5)
                 for key, _ in self._write_selector.select(0):
                     key.fileobj.send(send_data)  # type: ignore
+                    self.transmited.emit(send_data)
                     logger.debug(f'sended: {send_data.hex(" ").upper()}')
             except Empty:
                 time.sleep(0.001)
