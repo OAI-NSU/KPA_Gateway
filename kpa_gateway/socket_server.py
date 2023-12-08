@@ -21,6 +21,10 @@ class SocketServer:
         self._running_flag = False
         self._tx_queue = Queue()
         self._rx_queue = Queue()
+        self._run_status: bool = False
+
+    def is_running(self) -> bool:
+        return self._run_status
 
     def send(self, data: bytes) -> None:
         self._tx_queue.put(data, timeout=1)
@@ -92,7 +96,8 @@ class SocketServer:
             self._thread.start()
             self._handler_thread.start()
         else:
-            logger.error('Server is alreay running')
+            logger.warning('Server is already running')
+        self._run_status = True
 
     def stop(self) -> None:
         if self._running_flag:
@@ -101,6 +106,7 @@ class SocketServer:
             self._handler_thread.join(1)
         else:
             logger.error('Server is not running')
+        self._run_status = False
 
 
 if __name__ == "__main__":

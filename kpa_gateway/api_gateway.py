@@ -1,6 +1,4 @@
-
-
-from typing import Callable
+from typing import Callable, Iterable
 from loguru import logger
 from kpa_gateway.frame_parser import Frame
 from kpa_gateway.frame_types.base_types import FrameID
@@ -8,14 +6,17 @@ from kpa_gateway.frame_types.control_command import FrameCMD
 from kpa_gateway.frame_types.position_telemetry import FramePosTel
 from kpa_gateway.frame_types.receipt import FrameReceipt
 from kpa_gateway.socket_server import SocketServer
+from kpa_gateway.worker import Worker
 
 
 class API_Gateway:
-    def __init__(self) -> None:
-        self.server = SocketServer("0.0.0.0", 4000)
+    def __init__(self, port: int = 4000) -> None:
+        self.port: int = port
+        self.server = SocketServer("0.0.0.0", self.port)
         self.server.received.connect(self.route)
+        self.workers: dict[str, Worker] = {}
 
-    def route(self, data: bytes):
+    def route(self, data: bytes) -> None:
         try:
             transport_frame: Frame = Frame.parse(data)
             logger.info(transport_frame)
@@ -35,8 +36,20 @@ class API_Gateway:
         except ValueError as err:
             logger.error(err)
 
-    def start(self):
+    def add_worker(self, target: Callable, name: str | None = None, period_sec: float = 5, args: Iterable = []) -> None:
+        worker_name = f'{target.__name__}_worker' if not name else name
+        self.workers.update({worker_name: Worker(name=worker_name, period_sec=period_sec, target=target, args=args)})
+
+    def get_worker(self, name: str) -> Worker | None:
+        return self.workers.get(name, None)
+
+    def start(self) -> None:
         self.server.start_server()
+        [worker.start() for worker in self.workers.values()]
+
+    def stop(self) -> None:
+        self.server.stop()
+        [worker.stop() for worker in self.workers.values()]
 
     def position_telemetry(self, telemetry_type: int) -> Callable:
         def decorator(func: Callable) -> Callable:
