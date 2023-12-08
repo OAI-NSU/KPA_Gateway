@@ -29,13 +29,17 @@ def terminate_thread(thread, exception) -> None:
 
 class Worker:
     def __init__(self, name: str, period_sec: float, target: Callable, args: Iterable) -> None:
-        self.name = name
-        self.period_sec = period_sec
-        self.target = target
-        self.args = args
+        self.name: str = name
+        self.period_sec: float = period_sec
+        self.target: Callable = target
+        self.args: Iterable = args
+
         self._thread: Thread
         self._running_flag: bool = False
         self._lock = Lock()
+
+    def set_period(self, new_period_sec: float):
+        self.period_sec = new_period_sec
 
     def start(self) -> None:
         if not self._running_flag:
