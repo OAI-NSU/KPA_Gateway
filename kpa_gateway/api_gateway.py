@@ -12,7 +12,7 @@ from kpa_gateway.worker import Worker
 class API_Gateway:
     def __init__(self, port: int = 4000) -> None:
         self.port: int = port
-        self.server = SocketServer("0.0.0.0", self.port)
+        self.server = SocketServer(self.port)
         self.server.received.connect(self.route)
         self.workers: dict[str, Worker] = {}
 

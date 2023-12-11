@@ -2,7 +2,6 @@ from queue import Empty, Queue
 import selectors
 import socket
 from threading import Thread
-import time
 from loguru import logger
 from kpa_gateway.utils import Signal
 
@@ -10,85 +9,88 @@ from kpa_gateway.utils import Signal
 class SocketServer:
     received: Signal = Signal(bytes)
     transmited: Signal = Signal(bytes)
-    def __init__(self, host, port) -> None:
+    connected: Signal = Signal(dict)
+    disconnected: Signal = Signal(tuple)
+    def __init__(self, port: int) -> None:
         """Initialise the server attributes."""
-        self._host = host
-        self._port = port
+        self._host: str = '0.0.0.0'
+        self._port: int = port
         self._socket: socket.socket | None = None
-        self._read_selector = selectors.DefaultSelector()
-        self._write_selector = selectors.DefaultSelector()
+        self._selector = selectors.DefaultSelector()
         self._thread: Thread
         self._handler_thread: Thread
         self._running_flag = False
         self._tx_queue = Queue()
         self._rx_queue = Queue()
         self._run_status: bool = False
-
-    def is_running(self) -> bool:
-        return self._run_status
+        self._handlers: dict = {selectors.EVENT_READ: self._read_handler, selectors.EVENT_WRITE: self._write_handler}
 
     def send(self, data: bytes) -> None:
-        self._tx_queue.put(data, timeout=1)
+        self._tx_queue.put(data)
 
     def _rx_routine(self) -> None:
         while self._running_flag:
-            try:
-                data: bytes = self._rx_queue.get(timeout=0.1)
-                self.received.emit(data)
-            except Empty:
-                time.sleep(0.01)
+            data: bytes = self._rx_queue.get()
+            self.received.emit(data)
 
-    def _read_handler(self, sock, addr) -> bool:
+    def _read_handler(self, sock: socket.socket) -> bool:
         try:
             data: bytes = sock.recv(1024)
+            if not data:
+                logger.debug("Disconnected by", sock.getpeername())
+                return False
             self._rx_queue.put_nowait(data)
             logger.debug(f'received: {data.hex(" ").upper()}')
-            try:
-                send_data: bytes = self._tx_queue.get(timeout=0.5)
-                for key, _ in self._write_selector.select(0):
-                    key.fileobj.send(send_data)  # type: ignore
-                    self.transmited.emit(send_data)
-                    logger.debug(f'sended: {send_data.hex(" ").upper()}')
-            except Empty:
-                time.sleep(0.001)
         except ConnectionError:
             logger.debug("Client suddenly closed while receiving")
             return False
-        if not data:
-            logger.debug("Disconnected by", addr)
+        return True
+
+    def _write_handler(self, sock) -> bool:
+        try:
+            data: bytes = self._tx_queue.get_nowait()
+            sock.send(data)
+            logger.debug(f'sended: {data.hex(" ").upper()}')
+        except Empty:
+            pass
+        except ConnectionError:
+            logger.debug("Client suddenly closed while receiving")
             return False
         return True
 
-    def _accept_connection(self, sel, serv_sock, mask) -> None:
+    def _accept_connection(self, sel: selectors.SelectSelector, serv_sock: socket.socket, mask: int) -> None:
         """Callback function for when the server is ready to accept a connection."""
-        client_sock, addr = serv_sock.accept()
+        client: tuple[socket.socket, tuple[str, int]] = serv_sock.accept()
+        client_sock: socket.socket = client[0]
+        addr: tuple[str, int] = client[1]
         logger.debug(f"Connected client {addr}")
-        sel.register(client_sock, selectors.EVENT_READ, self._on_read_ready)
-        self._write_selector.register(client_sock, selectors.EVENT_WRITE)
+        sel.register(client_sock, selectors.EVENT_READ | selectors.EVENT_WRITE, self._selector_ready)
+        self.connected.emit({addr[0]: client_sock})
 
-    def _on_read_ready(self, sel, sock, mask) -> None:
-        addr = sock.getpeername()
-        if not self._read_handler(sock, addr):
-            logger.debug(f'Client {addr} disconnected')
+    def _selector_ready(self, sel: selectors.SelectSelector, sock: socket.socket, mask: int) -> None:
+        def lost_connection_handler(sock: socket.socket) -> None:
+            addr = sock.getpeername()
+            logger.debug(f'Client { addr } disconnected')
             sel.unregister(sock)
-            self._write_selector.unregister(sock)
             sock.close()
+            self.disconnected.emit(addr)
+
+        self._handlers.get(mask, lost_connection_handler)(sock)
+
 
     def _run(self) -> None:
         """Starts the server and accepts connections indefinitely."""
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((self._host, self._port))
         self._socket.listen()
-        self._socket.setblocking(False)
-        self._socket.settimeout(1)
         # Put the socket in the selector "bag":
-        self._read_selector.register(self._socket, selectors.EVENT_READ, self._accept_connection)
-        logger.info("Running server...")
+        self._selector.register(self._socket, selectors.EVENT_READ, self._accept_connection)
+        logger.info(f'Starting KPA_Gateway server at {self._host}:{self._port}')
         while self._running_flag:
-            events = self._read_selector.select()
+            events: list[tuple[selectors.SelectorKey, int]] = self._selector.select()
             for key, mask in events:
                 callback = key.data
-                callback(self._read_selector, key.fileobj, mask)
+                callback(self._selector, key.fileobj, mask)
 
     def start_server(self) -> None:
         if not self._running_flag:
@@ -112,10 +114,13 @@ class SocketServer:
 
 
 if __name__ == "__main__":
-    cs = SocketServer("0.0.0.0", 4000)
+    cs = SocketServer(4000)
+    cs.start_server()
     cs.received.connect(lambda data: logger.info(data.hex(' ').upper()))
     try:
-        in_data = input('<')
+        while True:
+            in_data = input('<')
+            cs.send(in_data.encode('utf-8'))
     except KeyboardInterrupt:
         cs.stop()
         print('shutdown')
