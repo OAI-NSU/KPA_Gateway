@@ -16,7 +16,7 @@ class Worker:
         self._running_flag: bool = False
         self._lock = Lock()
 
-    def set_period(self, new_period_sec: float):
+    def set_period(self, new_period_sec: float) -> None:
         self.period_sec = new_period_sec
 
     def start(self) -> None:
@@ -29,6 +29,7 @@ class Worker:
     def stop(self) -> None:
         if self._running_flag:
             self._running_flag = False
+            self._thread.join(1)
 
     def _routine(self) -> None:
         while self._running_flag:
