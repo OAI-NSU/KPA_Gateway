@@ -17,7 +17,11 @@ class GatewayCMD(AbstractFrame):
 
     @staticmethod
     def listen(cmd_type: int, cmd_code: int, callback: Callable) -> None:
-        GatewayCMD._registered.update({cmd_type: {cmd_code: callback}})
+        data: dict[int, Callable] = GatewayCMD._registered.get(cmd_type, {})
+        if data:
+            data.update({cmd_code: callback})
+        else:
+            GatewayCMD._registered.update({cmd_type: {cmd_code: callback}})
 
     @staticmethod
     def route(cmd_type: int, cmd_code: int) -> Callable | None:
