@@ -13,7 +13,7 @@ class ReceivedData:
     msg: bytes
 
 class SocketServer:
-    received: Signal = Signal(tuple)
+    received: Signal = Signal(ReceivedData)
     transmited: Signal = Signal(bytes)
     connected: Signal = Signal(dict)
     disconnected: Signal = Signal(tuple)
@@ -63,7 +63,7 @@ class SocketServer:
             return False
         return True
 
-    def _write_handler(self, sock) -> bool:
+    def _write_handler(self, sock: socket.socket) -> bool:
         try:
             data: bytes = self._tx_queue.get_nowait()
             sock.send(data)
@@ -93,7 +93,17 @@ class SocketServer:
             sock.close()
             self.disconnected.emit(addr)
 
-        self._handlers.get(mask, lost_connection_handler)(sock)
+        if mask & selectors.EVENT_WRITE:
+            if not self._write_handler(sock):
+                lost_connection_handler(sock)
+        if mask & selectors.EVENT_READ:
+            if not self._read_handler(sock):
+                lost_connection_handler(sock)
+        if not (mask & selectors.EVENT_WRITE) and not (mask & selectors.EVENT_READ):
+            lost_connection_handler(sock)
+        # else:
+
+        # self._handlers.get(mask, lost_connection_handler)(sock)
 
     def _run(self) -> None:
         """Starts the server and accepts connections indefinitely."""
@@ -123,8 +133,8 @@ class SocketServer:
     def stop(self) -> None:
         if self._running_flag:
             self._running_flag = False
-            self._thread.join(1)
-            self._handler_thread.join(1)
+            self._thread.join(0.2)
+            self._handler_thread.join(0.2)
         else:
             logger.error('Server is not running')
         self._run_status = False
@@ -133,7 +143,7 @@ class SocketServer:
 if __name__ == "__main__":
     cs = SocketServer(4000)
     cs.start_server()
-    cs.received.connect(lambda data: logger.info(data.hex(' ').upper()))
+    cs.received.connect(lambda data: logger.info(data.msg.hex(' ').upper()))
     try:
         while True:
             in_data: list[str] = input('<').split()

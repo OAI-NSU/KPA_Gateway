@@ -6,11 +6,11 @@ from kpa_gateway.frame_types.base_types import AbstractFrame, FrameID
 
 
 class AddrTelParameter:
-    def __init__(self, arg_num: int, telemetry_type: int, value: bytes):
+    def __init__(self, arg_num: int, telemetry_type: int, value: bytes, arg_size: int = -1):
         self.arg_num: int = arg_num
         self.telemetry_type: int = telemetry_type
         self.value: bytes = value
-        self.arg_size: int = len(self.value)
+        self.arg_size: int = len(self.value) if arg_size < 0 else arg_size
 
     @staticmethod
     def parse(data: bytes) -> 'AddrTelParameter':
@@ -22,7 +22,7 @@ class AddrTelParameter:
         return AddrTelParameter(arg_num, telemetry_type, value)
 
     def to_bytes(self) -> bytes:
-        return struct.pack('<HHHB', self.telemetry_type, self.arg_num, self.arg_size) + self.value
+        return struct.pack('<HHB', self.telemetry_type, self.arg_num, self.arg_size) + self.value
 
     def __str__(self) -> str:
         return f'Type: {self.telemetry_type}\nArg num: {self.arg_num}\nArg size: {self.arg_size}\n'\
@@ -57,4 +57,4 @@ class GatewayAddrTel(AbstractFrame):
             yield arg
 
     def __str__(self) -> str:
-        return f'ID: {self.frame_id}\nArg amount: {self.arg_amount}\nArgs: {[arg.value for arg in self.args]}'
+        return f'ID: {self.frame_id}\nArg amount: {self.arg_amount}\nArgs: {[str(arg) for arg in self.args]}'

@@ -23,7 +23,7 @@ FRAME_TYPES = Union[
 class GatewayFrame:
     def __init__(self, frame: FRAME_TYPES, timestamp: datetime | None = None):
         self.frame = frame
-        self.timestamp: datetime = timestamp if timestamp else datetime.utcnow()
+        self.timestamp: datetime = timestamp if timestamp else datetime.now()
         self.frame_length: int = len(frame.to_bytes()) + 8
 
     @staticmethod
@@ -51,7 +51,9 @@ class GatewayFrame:
         return struct.pack('<HQ', self.frame_length, dt_to_filetime(self.timestamp)) + self.frame.to_bytes()
 
     def __str__(self) -> str:
-        return f"Length: {self.frame_length}\nTime: {self.timestamp.isoformat(' ', 'seconds')}\n{self.frame}"
+        split_line = '=' * 30
+        return f"{split_line}\nLength: {self.frame_length}\nTime: {self.timestamp.isoformat(' ', 'seconds')}\n"\
+               f"{self.frame}\nRawData: 0x{self.to_bytes().hex(' ').upper()}"
 
 if __name__ == '__main__':
     frame = GatewayFrame(GatewayCMD(1, 1, (FrameCMDArgType.WORD, 77)))
