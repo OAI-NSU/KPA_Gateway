@@ -26,7 +26,7 @@ class API_Gateway:
                 cmd_frame: GatewayCMD = transport_frame.frame  # type: ignore
                 func: Callable | None = cmd_frame.route(cmd_frame.cmd_type, cmd_frame.cmd_code)
                 if func:
-                    result: bool = func(self, *cmd_frame.args)
+                    result: bool = func(*cmd_frame.args)
                     response = GatewayFrame(GatewayReceipt(GatewayCMD.frame_id.value, not result))
                     data.sock.send(response.to_bytes())
             elif transport_frame.frame.frame_id == FrameID.POSITION_TELEMETRY:

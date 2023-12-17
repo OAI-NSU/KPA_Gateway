@@ -8,7 +8,7 @@ from kpa_gateway.frame_types.base_types import ARG_SIZES, AbstractFrame, FrameCM
 
 class GatewayCMD(AbstractFrame):
     frame_id: FrameID = FrameID.CMD
-    _registered: dict[int, dict[int, Callable]] = {}
+    _registered: dict[int, dict] = {}
     def __init__(self, cmd_type: int, cmd_code: int, *args: tuple[FrameCMDArgType, Any]) -> None:
         self.cmd_type: int = cmd_type
         self.cmd_code: int = cmd_code
@@ -16,12 +16,12 @@ class GatewayCMD(AbstractFrame):
         self.arg_amount: int = len(self.args)
 
     @staticmethod
-    def listen(cmd_type: int, cmd_code: int, callback: Callable) -> None:
-        data: dict[int, Callable] = GatewayCMD._registered.get(cmd_type, {})
+    def listen(cmd_type: int, cmd_code: int, callback: Callable, *args) -> None:
+        data: dict = GatewayCMD._registered.get(cmd_type, {})
         if data:
-            data.update({cmd_code: callback})
+            data.update({cmd_code: callback, 'args': [*args]})
         else:
-            GatewayCMD._registered.update({cmd_type: {cmd_code: callback}})
+            GatewayCMD._registered.update({cmd_type: {cmd_code: callback, 'args': [*args]}})
 
     @staticmethod
     def route(cmd_type: int, cmd_code: int) -> Callable | None:

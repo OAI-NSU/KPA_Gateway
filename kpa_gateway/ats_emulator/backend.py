@@ -25,8 +25,8 @@ class ATS_Emulator(QtWidgets.QWidget, _Widgets):
         loadUi(Path(__file__).parent.joinpath('frontend.ui'), self)
         self.setWindowTitle('Имитатор АИК')
         self.client = SocketClient(self.ip_line_edit.text(), self.port_spin_box.value())
-        # self.client.received.connect(self.on_received)
-        self.client.disconnected.connect(lambda: self.log_text_browser.append('Disconnected'))
+        self.client.received.connect(self.on_received)
+        self.client.disconnected.connect(lambda: self.log_text_browser.append('Disconnected from server'))
         self.client.connected.connect(self.on_connected)
         self.receipt_arg_len_spin_box.valueChanged.connect(self.set_receipt_args)
         self.cmd_arg_len_spin_box.valueChanged.connect(self.set_cmd_args)
@@ -103,10 +103,15 @@ class ATS_Emulator(QtWidgets.QWidget, _Widgets):
         self.client.send(data.to_bytes())
 
     def on_connect_btn_pressed(self) -> None:
-        if not len(self.ip_line_edit.text()):
-            return
-        self.client._host = self.ip_line_edit.text()
-        self.client.connect()
+        if self.connect_btn.text() == 'Подключиться':
+            if not len(self.ip_line_edit.text()):
+                return
+            self.client._host = self.ip_line_edit.text()
+            self.client.connect()
+            self.connect_btn.setText('Отключиться')
+        elif self.connect_btn.text() == 'Отключиться':
+            self.connect_btn.setText('Подключиться')
+            self.client.disconnect()
 
     def on_connected(self):
         self.log_text_browser.append(f'Connected to server {self.ip_line_edit.text()}:{self.port_spin_box.value()}')

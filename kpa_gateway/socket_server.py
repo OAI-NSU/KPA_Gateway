@@ -60,6 +60,7 @@ class SocketServer:
             logger.debug(f'received: {data.hex(" ").upper()}')
         except ConnectionError:
             logger.debug("Client suddenly closed while receiving")
+            del self.clients[sock.getpeername()[0]]
             return False
         return True
 
@@ -72,6 +73,7 @@ class SocketServer:
             pass
         except ConnectionError:
             logger.debug("Client suddenly closed while receiving")
+            del self.clients[sock.getpeername()[0]]
             return False
         return True
 

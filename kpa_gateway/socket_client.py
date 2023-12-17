@@ -26,7 +26,8 @@ class SocketClient:
                 msg: bytes = self._socket.recv(1024)
                 if not msg:
                     break
-                print("got from server < ", msg)
+                logger.debug("ATS Emulator got from server < ", msg)
+                self.received.emit(msg)
                 time.sleep(0.1)
         except ConnectionResetError as err:
             logger.error(f'Lost connection with server: {err}')
