@@ -17,6 +17,7 @@ class API_Gateway:
         self.workers: dict[str, Worker] = {}
         self.ats_ip: str = ats_ip
         self.feeder_module_ip: str = feeder_module_ip
+        self.ats_emulator_ip = '127.0.0.1'
 
     def route(self, data: ReceivedData) -> None:
         try:
@@ -64,6 +65,8 @@ class API_Gateway:
         return wrapper
 
     def send_ats(self, frame: GatewayFrame) -> None:
+        if self.ats_emulator_ip in list(self.server.clients):
+            self.server.send_to_client(self.ats_emulator_ip, frame.to_bytes())
         self.server.send_to_client(self.ats_ip, frame.to_bytes())
 
     def send_feeder(self, frame: GatewayFrame) -> None:

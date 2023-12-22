@@ -123,8 +123,8 @@ class SocketServer:
 
     def start_server(self) -> None:
         if not self._running_flag:
-            self._thread = Thread(name='server thread', target=self._run, daemon=True)
-            self._handler_thread = Thread(name='rx_handler_thread', target=self._rx_routine, daemon=True)
+            self._thread = Thread(name='gateway_server_thread', target=self._run, daemon=True)
+            self._handler_thread = Thread(name='ats_emulator_rx_handler_thread', target=self._rx_routine, daemon=True)
             self._running_flag = True
             self._thread.start()
             self._handler_thread.start()

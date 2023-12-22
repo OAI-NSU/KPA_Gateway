@@ -16,8 +16,8 @@ class GatewayPosTel(AbstractFrame):
         return struct.pack('<HHH', self.frame_id.value, self.telemetry_type, self.size) + self.tmi_data
 
     @staticmethod
-    def listen(telemetry_type: int, callback: Callable) -> None:
-        GatewayPosTel._registered.update({telemetry_type: callback})
+    def listen(telemetry_type: int, callback: Callable, *args) -> None:
+        GatewayPosTel._registered.update({telemetry_type: callback, 'args': [*args]})
 
     @staticmethod
     def route(telemetry_type: int) -> Callable | None:
