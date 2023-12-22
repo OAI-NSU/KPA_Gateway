@@ -6,7 +6,7 @@ from kpa_gateway.frame_types.base_types import AbstractFrame, FrameID
 
 class GatewayPosTel(AbstractFrame):
     frame_id: FrameID = FrameID.POSITION_TELEMETRY
-    _registered: dict[int, Callable] = {}
+    _registered: dict = {}
     def __init__(self, telemetry_type: int, tmi_data: bytes) -> None:
         self.telemetry_type: int = telemetry_type
         self.tmi_data: bytes = tmi_data
