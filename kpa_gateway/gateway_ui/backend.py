@@ -4,7 +4,7 @@ from pathlib import Path
 from socket import socket
 from PyQt6 import QtWidgets
 from PyQt6.uic.load_ui import loadUi
-from kpa_gateway.api_gateway import API_Gateway
+from kpa_gateway.api_gateway import API_Gateway, ReceivedData
 
 
 class GatewayServer(QtWidgets.QWidget):
@@ -43,9 +43,9 @@ class GatewayServer(QtWidgets.QWidget):
         self.server_log_text_browser.append(f'{ts}: Соединение с {self.message.get(connected_ip, connected_ip)} '\
                                             f'разорвано')
 
-    def on_received(self, data: bytes) -> None:
+    def on_received(self, data: ReceivedData) -> None:
         ts: str = datetime.now().isoformat(" ", "seconds")
-        self.server_log_text_browser.append(f'{ts} rx: {data.hex(" ").upper()}')
+        self.server_log_text_browser.append(f'{ts} rx: {data.msg.hex(" ").upper()}')
 
     def on_transmited(self, data: bytes) -> None:
         ts: str = datetime.now().isoformat(" ", "seconds")
