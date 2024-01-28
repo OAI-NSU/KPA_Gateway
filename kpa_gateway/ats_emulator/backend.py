@@ -5,7 +5,6 @@ from typing import Any
 from PyQt6 import QtWidgets
 from PyQt6.uic.load_ui import loadUi
 from kpa_gateway.ats_emulator.args_widgets import ATM_Arg, CMD_Arg, MsgArg, _add_arg
-# from kpa_gateway.ats_emulator.frontend import Ui_Form
 from kpa_gateway.ats_emulator.widgets import _Widgets
 from kpa_gateway.frame_parser import GatewayFrame
 from kpa_gateway.frame_types.address_telemetry import AddrTelParameter, GatewayAddrTel
@@ -15,7 +14,7 @@ from kpa_gateway.frame_types.message import GatewayLogMessage, GatewayMessage
 from kpa_gateway.frame_types.position_telemetry import GatewayPosTel
 from kpa_gateway.frame_types.receipt import GatewayReceipt
 
-from kpa_gateway.socket_client import SocketClient
+from python_tcp.client import SocketClient
 
 
 class ATS_Emulator(QtWidgets.QWidget, _Widgets):
@@ -24,10 +23,11 @@ class ATS_Emulator(QtWidgets.QWidget, _Widgets):
         # self.setupUi(self)
         loadUi(Path(__file__).parent.joinpath('frontend.ui'), self)
         self.setWindowTitle('Имитатор АИК')
-        self.client = SocketClient(self.ip_line_edit.text(), self.port_spin_box.value())
-        self.client.received.connect(self.on_received)
-        self.client.disconnected.connect(lambda: self.log_text_browser.append('Disconnected from server'))
-        self.client.connected.connect(self.on_connected)
+        self.client = SocketClient(self.ip_line_edit.text(),
+                                   self.port_spin_box.value())
+        self.client.received.subscribe(self.on_received)
+        self.client.disconnected.subscribe(lambda: self.log_text_browser.append('Disconnected from server'))
+        self.client.connected.subscribe(self.on_connected)
         self.receipt_arg_len_spin_box.valueChanged.connect(self.set_receipt_args)
         self.cmd_arg_len_spin_box.valueChanged.connect(self.set_cmd_args)
         self.atm_arg_len_spin_box.valueChanged.connect(self.set_atm_args)
@@ -40,7 +40,8 @@ class ATS_Emulator(QtWidgets.QWidget, _Widgets):
     def on_received(self, data: bytes) -> None:
         frame: GatewayFrame = GatewayFrame.parse(data)
         self.log_text_browser.append(str(frame))
-        if frame.frame.frame_id == FrameID.CMD and self.auto_receipt_check_box.isChecked():
+        is_autorecipe: bool = self.auto_receipt_check_box.isChecked()
+        if frame.frame.frame_id == FrameID.CMD and is_autorecipe:
             answer = GatewayFrame(GatewayReceipt(frame.frame.cmd_code, 0))  # type: ignore
             self.log_text_browser.append(str(answer))
             self.client.send(answer.to_bytes())
@@ -113,8 +114,10 @@ class ATS_Emulator(QtWidgets.QWidget, _Widgets):
             self.connect_btn.setText('Подключиться')
             self.client.disconnect()
 
-    def on_connected(self):
-        self.log_text_browser.append(f'Connected to server {self.ip_line_edit.text()}:{self.port_spin_box.value()}')
+    def on_connected(self) -> None:
+        ip: str = self.ip_line_edit.text()
+        port: int = self.port_spin_box.value()
+        self.log_text_browser.append(f'Connected to server {ip}:{port}')
 
 
 if __name__ == "__main__":

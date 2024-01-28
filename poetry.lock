@@ -12,6 +12,21 @@ files = [
 ]
 
 [[package]]
+name = "event"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.10"
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/CrinitusFeles/Event.git"
+reference = "HEAD"
+resolved_reference = "81003466bbe20245f876425e38062c5641fa1adc"
+
+[[package]]
 name = "loguru"
 version = "0.7.2"
 description = "Python logging made (stupidly) simple"
@@ -90,6 +105,25 @@ files = [
 ]
 
 [[package]]
+name = "python-tcp"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.10"
+files = []
+develop = false
+
+[package.dependencies]
+event = {git = "https://github.com/CrinitusFeles/Event.git"}
+loguru = "^0.7.2"
+
+[package.source]
+type = "git"
+url = "https://github.com/CrinitusFeles/PythonTCP.git"
+reference = "HEAD"
+resolved_reference = "8624449dd1e8b25e79c4b8126eb5c54a03e147ee"
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -106,4 +140,4 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "74eb6493ee16a2f823317d20f03b14f34b2be3a11270534d650cd62a13586bab"
+content-hash = "e90d74b987d34a2f0c5bf423d2d9535ec25bf72e731368a85836d9437c458203"

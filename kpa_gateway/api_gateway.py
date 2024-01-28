@@ -1,5 +1,5 @@
 from typing import Callable, Iterable
-from kpa_gateway.socket_server import ReceivedData, SocketServer
+from python_tcp.server import ReceivedData, SocketServer
 from loguru import logger
 from kpa_gateway.frame_parser import GatewayFrame
 from kpa_gateway.frame_types.base_types import FrameID
@@ -13,7 +13,7 @@ class API_Gateway:
     def __init__(self, port: int = 4000, ats_ip: str = '', feeder_module_ip: str = '') -> None:
         self.port: int = port
         self.server = SocketServer(self.port)
-        self.server.received.connect(self.route)
+        self.server.received.subscribe(self.route)
         self.workers: dict[str, Worker] = {}
         self.ats_ip: str = ats_ip
         self.feeder_module_ip: str = feeder_module_ip

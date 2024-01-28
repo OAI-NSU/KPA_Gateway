@@ -19,10 +19,10 @@ class GatewayServer(QtWidgets.QWidget):
         super().__init__()
         loadUi(Path(__file__).parent.joinpath('frontend.ui'), self)
         self.server: API_Gateway = server
-        self.server.server.connected.connect(self.on_connected)
-        self.server.server.disconnected.connect(self.on_disconnected)
-        self.server.server.received.connect(self.on_received)
-        self.server.server.transmited.connect(self.on_transmited)
+        self.server.server.connected.subscribe(self.on_connected)
+        self.server.server.disconnected.subscribe(self.on_disconnected)
+        self.server.server.received.subscribe(self.on_received)
+        self.server.server.transmited.subscribe(self.on_transmited)
         self.tmi1_period_spinbox.valueChanged.connect(lambda period: self.server.get_worker('tmi1').set_period(period))  # type: ignore
         self.tmi2_period_spinbox.valueChanged.connect(lambda period: self.server.get_worker('tmi2').set_period(period))  # type: ignore
         self.tmi1_checkbox.stateChanged.connect(self.tmi1_state_handler)
