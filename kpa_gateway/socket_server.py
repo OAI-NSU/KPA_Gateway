@@ -58,6 +58,9 @@ class SocketServer:
                 return False
             self._rx_queue.put_nowait(ReceivedData(sock, data))
             logger.debug(f'received: {data.hex(" ").upper()}')
+        except ConnectionResetError:
+            logger.debug("Client disconnected")
+            return False
         except ConnectionError:
             logger.debug("Client suddenly closed while receiving")
             del self.clients[sock.getpeername()[0]]
@@ -89,11 +92,16 @@ class SocketServer:
 
     def _selector_ready(self, sel: selectors.SelectSelector, sock: socket.socket, mask: int) -> None:
         def lost_connection_handler(sock: socket.socket) -> None:
-            addr = sock.getpeername()
-            logger.debug(f'Client { addr } disconnected')
+            # addr = sock.getpeername()
+            for ip, sock_obj in self.clients.items():
+                if sock in sock_obj:
+                    sock_obj.remove(sock)
+                    if not len(sock_obj):
+                        logger.debug(f'Client { ip } disconnected')
+                        self.disconnected.emit(ip)
+            logger.debug('Client disconnected')
             sel.unregister(sock)
             sock.close()
-            self.disconnected.emit(addr)
 
         if mask & selectors.EVENT_WRITE:
             if not self._write_handler(sock):
