@@ -110,6 +110,7 @@ class SocketServer:
     def _run(self) -> None:
         """Starts the server and accepts connections indefinitely."""
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._socket.bind((self._host, self._port))
         self._socket.listen()
         # Put the socket in the selector "bag":

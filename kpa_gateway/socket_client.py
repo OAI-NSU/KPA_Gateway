@@ -26,7 +26,7 @@ class SocketClient:
                 msg: bytes = self._socket.recv(1024)
                 if not msg:
                     break
-                logger.debug("ATS Emulator got from server < ", msg)
+                logger.debug(f"< {msg}")
                 self.received.emit(msg)
                 time.sleep(0.1)
         except ConnectionResetError as err:
@@ -40,6 +40,7 @@ class SocketClient:
 
     def _connect_routine(self) -> bool:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             self._socket.connect((self._host, self._port))
             self._connection_status = True
@@ -79,12 +80,12 @@ class SocketClient:
 if __name__ == "__main__":
     # server = SocketServer('localhost', 8083)
     # server.start_server()
-    client = SocketClient("localhost", 4000)
+    client = SocketClient("rpi", 7777)
     try:
         client.connect()
         while True:
             in_data = input('>')
-            client.send(in_data.encode('utf-8'))
+            client.send(bytes.fromhex('F0 0C 00 04 00 01 00 A6 0F'))
     except KeyboardInterrupt:
         client.disconnect()
         # server.stop()
