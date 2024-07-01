@@ -13,6 +13,7 @@ class API_Gateway:
     def __init__(self, port: int = 4000, ats_ip: str = '', feeder_module_ip: str = '') -> None:
         self.port: int = port
         self.server = SocketServer(self.port)
+        self.server.label = 'API_Gateway'
         self.server.received.subscribe(self.route)
         self.workers: dict[str, Worker] = {}
         self.ats_ip: str = ats_ip
